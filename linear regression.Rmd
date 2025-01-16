@@ -1,0 +1,195 @@
+---
+title: "STAT 456 Homework 4"
+author: "Hailey Lee"
+date: "03/10/2024"
+output: pdf_document
+documentclass: article 
+geometry: margin=1in
+fontsize: 12pt
+pagenumber: TRUE
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Instructions:**
+
+1. Please use R to finish all the questions below. Although in some simple cases, you may obtain the solution directly without using R, you still need to provide the corresponding R code.
+
+2. You are liable for missing points if you don't include output;
+
+3. Whenever possible, please run saved variables, so our TA knows if your code goes the right way and assigns partial credits even if your final answer is wrong.
+
+4. Please submit your solutions in a .pdf file compiled using R markdown.  
+
+\newpage
+
+1. **Time at the table.** Does how long young children remain at the lunch table help to predict how much they eat. Here are the data on 20 toddlers observed over several months at a nursery school. `Time` is the average number of minutes a child spent at the table when lunch was served. `Calories` is the average number of calories the child consumed during lunch, calculated from careful observation of what the child ate each day.
+
+
+Child | Time | Calories
+-----------|-----------|------------
+1  | 21.4 |  472
+2  | 30.8 |  498
+3  | 37.7 |  465
+4  | 33.5 |  456
+5  | 32.8 |  423
+6  | 39.5 |  437
+7  | 22.8 |  508
+8  | 34.1 |  431
+9  | 33.9 |  479
+10 | 43.8 |  454
+11 | 42.4 |  450
+12 | 43.1 |  410
+13 | 29.2 |  504
+14 | 31.3 |  437
+15 | 28.6 |  489
+16 | 32.9 |  436
+17 | 30.6 |  480
+18 | 35.1 |  439
+19 | 33.0 |  444
+20 | 43.7 |  408 
+
+(a) Check the conditions for regression inference. 
+
+    + **Linear relationship.** Draw a plot of residuals against the variable `Time`. Use vertical limits $-100$ to $100$ in your plot of the residuals agains time to help you see the pattern. Does the plot show any systematic deviation from a roughly linear pattern?
+
+    + **Normal variation about the line.** Make a histogram of the residuals. Give some comments on the distribution of the residuals.
+```{R, eval=T}
+library(devtools)
+library(tidyverse)
+library(dplyr)
+
+child <- data.frame(
+  Child <- 1:20,
+  Time <- c(21.4, 30.8, 37.7, 33.5, 32.8, 39.5, 22.8, 34.1, 33.9, 43.8, 
+            42.4, 43.1, 29.2, 31.3, 28.6, 32.9, 30.6, 35.1, 33.0, 43.7),
+  Calories <- c(472, 498, 465, 456, 423, 437, 508, 431, 479, 454,
+                450, 410, 504, 437, 489, 436, 480, 439, 444, 408)
+)
+
+res <- resid(lm(Calories ~ Time, data=child))
+
+child %>%
+  ggplot(aes(Time, res)) +
+  geom_point() + 
+  labs(x = "Time",
+       y = "Residuals",
+       main = "Time vs. Residuals") + 
+  ylim(-100, 100)
+
+hist(res)
+```
+The Time vs. Residual plot shows that every value of residuals are within 50 units from the expected value of Calories; however, it doens't really show linear pattern. Looking at histogram, it also does not look unimodal or roughly symmetric. 
+
+(b) Is there significant evidence that more time at the table is associated with more calories consumed? (Hint: This is to test if $H_0:\beta_1\leq 0~v.s.~H_a:\beta_1>0$, and if the $p$-value $<0.05$, then there is significant evidence that more time at the table is associated with more calories consumed; otherwise, there is not enough evidence.)
+
+```{R, eval=T}
+cor.test(child$Time, child$Calories, method = "pearson", alternative = "greater")
+```
+Since p-value is greater than 0.05, there is not enough evidence that more time at the table is associated with more calories consumed.
+
+
+2. **Ball Thrower.** [See Homework 3, Q3] A child throws a tennis ball straight up in the air. The table below shows the height of the ball (measured in feet from the ground) at $n=7$ times, measured in seconds, where Time $=0$ corresponds to the time at which the ball was released.
+
+
+Time | Height
+------|-------
+0.0 | 8
+0.5 | 48
+1.0 | 72
+1.5 | 80
+2.0 | 72
+2.5 | 48
+3.0 | 8
+
+
+(a) Now define a new variable $Z=$ Time$^2$, and consider the linear regression model:
+\begin{equation}
+ Y_i = \gamma_0 + \gamma_1 Z_i + \epsilon_i,
+ \label{model 2}
+\end{equation}
+where $Y$ is Height and $Z$ is Time$^2$, and obtain the numerical values for the least-squares estimates of $\widehat{\gamma}_0$ and $\widehat{\gamma}_1$.
+
+```{R, eval=T}
+tennis <- data.frame(
+  Time = c(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
+  Height = c(8, 48, 72, 80, 72, 48, 8)
+)
+tennis["Z"] = tennis$Time^2
+
+coefficients(lm(Height ~ Z, data = tennis))
+```
+
+(b) Report the Pearson correlation between $X$ (Time) and $Z$. 
+
+```{R, eval = T}
+cor.test(tennis$Time, tennis$Z, method = "pearson")
+```
+
+(c) What is the $R^2$ for the model in part (a)? Discuss your results.
+
+```{R, eval=T}
+summary(lm(Height ~ Z, data = tennis))
+```
+The value of $R^2$ is 0.07692, which is relatively small.
+
+(d) Compare the model in 2(a) Homework 4 and the model in 3(b) Homework 3. Which model is more reasonable? Is Time relevant for predicting Height? How are they related?
+
+I would say the model from 3(b) of Homework 3 is more reasonable because R-squared is much smaller which can indicates more predictive model. Since the p-value is greater than 0.05 in 3(b),
+there is significant evidence that the more time throwing tennis balls is associated with higher height.
+
+3. Consider the dataset `pressure` which is an R build in dataset. You may type `help(pressure)` to get more information on this dataset.
+
+```{R, eval = T}
+help(pressure)
+data(pressure)
+```
+
+(a) The temperatures are provided on the Celsius scale. Convert them to the Fahrenheit scale and store them in an appropriate vector.
+
+```{R, eval= T}
+temp_F = (pressure$temperature * 9/5) + 32
+temp_F
+```
+
+(b) Create a data frame consisting of the temperature in the Fahrenheit scale and Pressure.
+
+```{R, eval= T}
+new_pressure <- data.frame(
+  Temperature = temp_F,
+  Pressure = pressure$pressure
+)
+new_pressure
+```
+
+
+(c) Plot temperature against pressure in the Fahrenheit scale.
+
+```{R, eval= T}
+new_pressure %>%
+  ggplot(aes(x = Temperature, y = Pressure)) + 
+  geom_point()
+```
+
+(d) Perform a simple linear regression with temperature (in Fahrenheit) against pressure, but **with no intercept** in the model. Report a summary of the results and plot the fitted line in part (c).  
+
+```{R, eval= T}
+summary(lm(Pressure ~ 0 + Temperature, data = new_pressure))
+
+new_pressure %>%
+  ggplot(aes(x = Temperature, y = Pressure)) +
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+(e) Plot the residuals against the fitted values. Is pressure adequate to explain the relationship with temperature?
+
+```{R, eval= T}
+one.way <- aov(Pressure ~ 0+Temperature, data = new_pressure)
+plot(one.way, 1)
+```
+
+The points line up with the line, so the pressure is adequate to explain the relationship with temperature.

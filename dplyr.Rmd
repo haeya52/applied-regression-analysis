@@ -1,0 +1,191 @@
+---
+title: "STAT 456 Homework 2"
+author: "Hailey Lee"
+date: "02/22/2024"
+output: pdf_document
+documentclass: article 
+geometry: margin=1in
+fontsize: 12pt
+pagenumber: TRUE
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Instructions:**
+
+1. Please use R to finish all the questions below. Although in some simple cases, you may obtain the solution directly without using R, you still need to provide the corresponding R code.
+
+2. You are liable for missing points if you don't include output;
+
+3. Whenever possible, please run saved variables, so our TA knows if your code goes the right way and assigns partial credits even if your final answer is wrong.
+
+4. Please submit your solutions in .rmd file and .pdf file compiled via the R markdown through Blackboard. 
+
+\newpage
+
+1. We are going to explore the basic data manipulation verbs of `dplyr` using `nycflights13::flights`. Install the R package `nycflights13`.
+
+```{R, eval=TRUE}
+library(nycflights13)
+data(flights)
+names(flights)
+```
+
+Next, use `?flights` to see more detailed information about this dataset. 
+```{R, eval=TRUE}
+?flights
+```
+
+   (a) Select `dep_time`, `dep_delay`, `arr_time`, and `arr_delay` from flights.
+```{R, eval=TRUE}
+dplyr::select(flights, dep_time, dep_delay, arr_time, arr_delay)
+```
+   (b) Find all flights that departed on January 1st, 2013.
+```{R, eval=TRUE}
+dplyr::filter(flights, year == 2013 & month == 1 & day == 1)
+```
+   (c) Find all flights that departed in December.
+```{R, eval=TRUE}
+dplyr::filter(flights, month == 12)
+```
+   (d) Find all flights that flew to Houston (`HOU`).
+```{R, eval=TRUE}
+dplyr::filter(flights, dest == "HOU")
+```
+   (e) Find all flights that were operated by United, American, or Delta Airlines.
+```{R, eval=TRUE}
+dplyr::filter(flights, carrier == "UA" | carrier == "AA" | carrier == "DL")
+```
+   (f) Sort flights to find the most delayed departing flights. Find the flights that departed the earliest.
+```{R, eval=TRUE}
+flights %>%
+  dplyr::arrange(desc(dep_delay)) %>%
+  dplyr::first()
+
+flights %>%
+  dplyr::arrange(dep_delay) %>%
+  dplyr::first()
+```
+   (g) What does the following code provide?
+
+
+```{R, eval=TRUE}
+delays <- flights %>% 
+  group_by(dest) %>% 
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)
+  )
+```
+This code creates the data 'delays' which contains entries from flights that are grouped by 'dest'
+and include the number of entries of each group and mean of distances and arrrival delay time of each group
+but does not print anything.
+
+   (h) What does the following code provide?
+
+```{R, eval=TRUE}
+by_day <- group_by(flights, year, month, day)
+summarize(by_day, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+
+2. We are going to explore the basic data manipulation verbs of `dplyr` using `I.county`. Install the github R package `IDDA`.
+
+```{R, eval=T}
+# install the IDDA package from github
+library(devtools)
+devtools::install_github('FIRST-Data-Lab/IDDA')
+# load objects in I.county into my workspace
+library(IDDA)
+data(I.county)
+```
+
+   (a) Obtain a subset of the `I.county` by selecting `ID`, `County`, `State`.
+```{R, eval=TRUE}
+dplyr::select(I.county, ID, County, State) %>%
+  first()
+```
+   
+   (b) Obtain a subset of the `I.county` by including all counties in California.
+```{R, eval=TRUE}
+dplyr::filter(I.county, State == "California") %>%
+  first()
+```
+   
+   (c) Obtain a subset of the `I.county` by including all counties that in the midwest states. 
+
+```{R eval=T}
+Midwest  = c( "Illinois", "Michigan", "Indiana" ,"Ohio", 
+"Wisconsin", "Iowa", "Kansas", "Minnesota", "Missouri", 
+"Nebraska" , "SouthDakota" , "NorthDakota")
+dplyr::filter(I.county, State %in% Midwest)  %>%
+  first()
+```
+
+   (d) Create new columns of `I.county` by taking the logarithm of each of the count column.
+```{R, eval=T}
+logcount <- I.county %>%
+  mutate(I.county, across(X2020.12.31:X2020.01.21, function(x){return (log(x))})) %>%
+  first()
+names(logcount) <- gsub(x = names(logcount), pattern = "\\X", replacement = "Y")
+full_join(I.county, logcount, by = c("ID", "County", "State"))  %>%
+  first()
+```
+
+   
+   
+3. Download the data `pop.county` from the github R package `IDDA`. 
+
+```{R, eval=T}
+# install the IDDA package from github
+library(devtools)
+devtools::install_github('FIRST-Data-Lab/IDDA')
+# load objects in I.county into my workspace
+library(IDDA)
+data(pop.county)
+```
+Join the tables of `I.county` and `pop.county` using `inner_join`, `left_join` , `right_join`, `full_join`. Do you get same or different tables?
+
+```{R, eval=T}
+inner_join(I.county, pop.county, by = c("State", "ID", "County"))  %>%
+  first()
+left_join(I.county, pop.county, by = c("State", "ID", "County")) %>%
+  first()
+right_join(I.county, pop.county, by = c("State", "ID", "County")) %>%
+  first()
+full_join(I.county, pop.county, by = c("State", "ID", "County")) %>%
+  first()
+```
+I got different tables for different tables.
+
+4. The dataset `state.long` from the package `IDDA` contains the following variables:
+* `State`: name of state matched with ID. 
+* `Region`: region of a state. 
+* `Division`: division of a state. 
+* `pop`: population of a state.
+* `DATE`: date that the data is reported.
+* `Infected`: the cumulative infected count of a state.
+* `Death`: the cumulative death count of a state.
+
+ (a) Obtain a subset of the data which contains only the data of ‘2020-12-11’.
+```{R, eval=T}
+data(state.long)
+dplyr::filter(state.long, DATE == "2020-12-11")  %>%
+  first()
+```
+ 
+ (b) Draw a simple scatterplot of the `Infected` vs `Death` based the data of ‘2020-12-11’.
+```{R, eval=T}
+state.long %>%
+  filter(DATE == "2020-12-11") %>%
+  ggplot(aes(Infected, Death)) +
+  geom_point()
+```
+ 
+ 

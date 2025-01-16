@@ -1,0 +1,143 @@
+---
+title: "STAT 456 Homework 6"
+author: "Hailey Lee"
+date: "04/04/2024"
+output: pdf_document
+documentclass: article 
+geometry: margin=1in
+fontsize: 12pt
+pagenumber: TRUE
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Instructions:**
+
+1. Please use R to finish all the questions below. Although in some simple cases, you may obtain the solution directly without using R, you still need to provide the corresponding R code.
+
+2. You are liable for missing points if you don't include output;
+
+3. Whenever possible, please run saved variables, so our TA knows if your code goes the right way and assigns partial credits even if your final answer is wrong.
+
+4. Please submit your solutions in a .pdf file compiled using R markdown.  
+
+\newpage
+
+
+1. Suppose we have a data set with five predictors, $X_1=$ GPA, $X_2 =$ IQ, $X_3 =$ Gender (1 for Female and 0 for Male), $X_4 =$ Interaction between GPA and IQ, and $X_5 =$ Interaction between GPA and Gender. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get $\widehat{\beta}_0 = 50$, $\widehat{\beta}_1 =20$, $\widehat{\beta}_2 = 0.07$, $\widehat{\beta}_3 = 35$, $\widehat{\beta}_4 = 0.01$, $\widehat{\beta}_5 = -10$.
+
+(a) Which answer is correct, and why?
+    i. For a fixed value of IQ and GPA, males earn more on average than females.
+    ii. For a fixed value of IQ and GPA, females earn more on average than males.
+    iii. For a fixed value of IQ and GPA, males earn more on average than females provided that the GPA is high enough.
+    iv. For a fixed value of IQ and GPA, females earn more on average than males provided that the GPA is high enough.
+    
+The option 3 seems correct because of the negative coefficient of the interaction term $\widehat{\beta}_5$, the fact that females earn more on average than males can be reversed with high enough GPA.
+
+(b) Predict the salary of a female with IQ of 110 and a GPA of 4.0.
+
+With the equtation,
+\begin{eqnarray*}
+Salary = \beta_0 + \beta_1 GPA  + \beta_2 IQ + \beta_3 Gender + \beta_4 (GPA * IQ) + \beta_5 (GPA * Gender)
+\end{eqnarray*}
+
+```{R, eval = T}
+salary <- 50 + 20 * 4.0 + 0.07 * 110 + 35 * 1 + 0.01 * (4.0 * 110) - 10 * (4.0 * 1)
+salary
+```
+
+The predicted salary of a female with IQ of 110 and a GPA of 4.0 is $137.10.
+
+2. This question should be answered using the `Carseats` data set in the `ISLR` R package.
+
+```{R, eval=T}
+library(ISLR)
+data(Carseats)
+head(Carseats)
+```
+
+(a) Fit a multiple regression model to predict Sales using Price, Urban, and US.
+```{R, eval = T}
+fit <- lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(fit)
+```
+
+(b) Provide an interpretation of each coefficient in the model. Be careful -- some of the variables in the model are qualitative!
+
+For every one unit increase in price, the model is expected to decrease in sales by approximately 0.054459.
+The estimated intercept is -0.021916 higher among Urban Carseats compared to not Urban Carseats.
+The estimated intercept is 1.200573 higher among US Carseats compared to not US Carseats.
+
+
+(c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+\begin{eqnarray*}
+Sales = \beta_0 + \beta_1 Price  + \beta_2 Urban + \beta_3 US + \epsilon
+\end{eqnarray*}
+
+(d) For which of the predictors can you reject the null hypothesis $H_0: \beta_j = 0$?
+
+We can reject the null hypothesis for Price and US because those p-values are very close to zero.
+
+3. Consider the dataset `pressure` which is an R build in dataset. You may type `help(pressure)` to get more information on this dataset.
+
+(a) The temperatures are provided on the Celsius scale. Convert them to the Fahrenheit scale and store them in an appropriate vector.
+```{R, eval = T}
+pres <- pressure
+pres$new.temp <- 32 + 9 * pres$temperature / 5
+head(pres)
+```
+
+(b) Create a data frame consisting of the temperature in the Fahrenheit scale and Pressure.
+```{R, eval = T}
+library(dplyr)
+pres.F <- pres %>% select(new.temp, pressure)
+head(pres.F)
+```
+
+(c) Plot temperature against pressure in the Fahrenheit scale.
+```{R, eval = T}
+library(ggplot2)
+pres.F %>% ggplot(aes(x=pressure, y=new.temp)) +
+  geom_point()
+```
+
+(d) Perform a simple linear regression with temperature (in Fahrenheit) against pressure, but **with no intercept** in the model. Report a summary of the results and plot the fitted line in part(c).  
+```{R, eval = T}
+fit3d <- lm(new.temp ~ 0 + pressure, data = pres.F)
+summary(fit3d)
+plot(new.temp ~ pressure, data = pres.F)
+abline(fit3d)
+```
+
+(e) Plot the residuals against the fitted values. Is pressure adequate to explain the relationship with temperature? 
+```{R, eval = T}
+one.way <- aov(new.temp ~ 0 + pressure, data = pres.F)
+plot(one.way, 1)
+```
+
+The pressure is not adequate to explain the relationship with temperature.
+
+(f) Create another dataframe with four columns, given by temperature in Fahrenheit, pressure, the squared of pressure and cubed pressure.  
+```{R, eval = T}
+pres.new <- pres %>% select(new.temp, pressure)
+pres.new$pressure_squared <- pres.new$pressure^2
+pres.new$pressure_cubed <- pres.new$pressure^3
+```
+
+(g) Use the above to perform multiple linear regression **with intercept** of temperature on the rest. Which coefficients are significant?
+```{R, eval = T}
+fit3g <- lm(new.temp ~ . , data = pres.new)
+summary(fit3g)
+```
+All of coefficients, pressure, pressure_squared, and pressure_cubed, are significant because the p-value is greater than the significance level.
+
+(h) Plot and interpret the residuals against the fitted values. Give some comments on the residual plot.
+```{R, eval = T}
+one.way <- aov(new.temp ~ ., data = pres.new)
+plot(one.way, 1)
+```
+The pressure is not adequate to explain the relationship with temperature.
